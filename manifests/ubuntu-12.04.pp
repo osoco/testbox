@@ -17,6 +17,7 @@ class {
 class init {
   exec { 'initial-apt-get-update':
     command => 'apt-get update',
+    onlyif => "/bin/sh -c '[ ! -f /var/cache/apt/pkgcache.bin ] || /usr/bin/find /etc/apt/* -cnewer /var/cache/apt/pkgcache.bin | /bin/grep . > /dev/null'",
   }
 
   package { 'python-software-properties':
@@ -67,4 +68,9 @@ class goldberg {
        default_use => false;
   }                      
 
+  rvm_gem {
+    'ruby-1.9.3-p194@bundler':
+       ensure => latest,
+       require => Rvm_system_ruby['ruby-1.9.3-p194'];
+  }
 }
