@@ -1,7 +1,10 @@
 stage { 'init': before => Stage['main'] }
 
 class {
-  'init': stage => 'init',
+  'init': stage => 'init';
+  'jdk': stage => 'main';
+  'grails': stage => 'main';
+  'git_core': stage => 'main';
 }  
 
 class init {
@@ -29,10 +32,6 @@ define git::clone($path) {
     }
 }
 
-git::clone { 'git clone repo':
-	path => '/home/dmcom/Documents/osoco/rumbo/bms/RMB-BACKOFFICE-BMS',
-}
-
 class jdk {
   package { "openjdk-6-jdk":
     ensure => present,
@@ -46,7 +45,7 @@ class grails {
 
   exec { 'apt-get-update':
     command => '/usr/bin/apt-get update',
-}
+  }
 
   package { 'grails-1.3.7':
     ensure => present,
