@@ -1,6 +1,10 @@
 Exec { path => ['/usr/local/sbin', '/usr/local/bin', '/usr/sbin', '/usr/bin', '/sbin', '/bin'] }
 
-stage { 'init': before => Stage['main'] }
+include rvm
+
+stage { 
+  'init': before => Stage['rvm-install', 'main'];
+}
 
 class {
   'init': stage => 'init';
@@ -27,7 +31,6 @@ class git_core {
         ensure => present,
     }
 }
-
 
 class jdk {
   package { "openjdk-6-jdk":
@@ -58,7 +61,9 @@ class goldberg {
     user => 'vagrant',
   }
 
-  package { 'make':
-    ensure => present,
-  }
+  rvm_system_ruby {
+    'ruby-1.9.3-p194':
+       ensure => 'present',
+       default_use => true;
+  }                      
 }
