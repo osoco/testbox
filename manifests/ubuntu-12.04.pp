@@ -53,7 +53,12 @@ class grails {
 
 class goldberg {
   exec { 'goldberg-clone-repo':
-    command => 'sudo -u vagrant git clone git://github.com/c42/goldberg.git /home/vagrant/goldberg',
+    command => 'git clone git://github.com/c42/goldberg.git',
     creates => '/home/vagrant/goldberg',
+    user => 'vagrant',
+  }
+
+  package { 'make':
+    ensure => present,
   }
 }
