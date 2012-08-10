@@ -1,3 +1,5 @@
+Exec { path => ['/usr/local/sbin', '/usr/local/bin', '/usr/sbin', '/usr/bin', '/sbin', '/bin'] }
+
 stage { 'init': before => Stage['main'] }
 
 class {
@@ -5,11 +7,12 @@ class {
   'jdk': stage => 'main';
   'grails': stage => 'main';
   'git_core': stage => 'main';
+  'goldberg': stage => 'main';
 }  
 
 class init {
   exec { 'initial-apt-get-update':
-    command => '/usr/bin/apt-get update',
+    command => 'apt-get update',
   }
 
   package { 'python-software-properties':
@@ -25,12 +28,6 @@ class git_core {
     }
 }
 
-define git::clone($path) {
-    include git_core
-    exec { 'git clone':
-        command => "/usr/bin/git clone $path /home/vagrant/RMB-BACKOFFICE-BMS"
-    }
-}
 
 class jdk {
   package { "openjdk-6-jdk":
@@ -40,11 +37,11 @@ class jdk {
 
 class grails {
   exec { 'ppa:groovy-dev/grails':
-    command => '/usr/bin/add-apt-repository ppa:groovy-dev/grails',
+    command => 'add-apt-repository ppa:groovy-dev/grails',
   }
 
   exec { 'apt-get-update':
-    command => '/usr/bin/apt-get update',
+    command => 'apt-get update',
   }
 
   package { 'grails-1.3.7':
@@ -52,4 +49,11 @@ class grails {
   }
 
   Exec['ppa:groovy-dev/grails'] -> Exec['apt-get-update'] -> Package['grails-1.3.7']
+}
+
+class goldberg {
+  exec { 'goldberg-clone-repo':
+    command => 'sudo -u vagrant git clone git://github.com/c42/goldberg.git /home/vagrant/goldberg',
+    creates => '/home/vagrant/goldberg',
+  }
 }
