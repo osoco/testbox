@@ -62,15 +62,14 @@ class goldberg {
     user => 'vagrant',
   }
 
-  rvm_system_ruby {
-    'ruby-1.9.3-p194':
-       ensure => 'present',
-       default_use => false;
+  rvm_system_ruby { 'ruby-1.9.3-p194':
+    ensure => 'present',
+    default_use => false;
   }                      
 
-  rvm_gem {
-    'ruby-1.9.3-p194@bundler':
-       ensure => latest,
-       require => Rvm_system_ruby['ruby-1.9.3-p194'];
+  rvm_gem { 'bundler':
+    ensure => latest,
+    ruby_version => 'ruby-1.9.3-p194',
+    require => Rvm_system_ruby['ruby-1.9.3-p194'];
   }
 }
