@@ -57,6 +57,7 @@ Vagrant::Config.run do |config|
   config.vm.provision :puppet do |puppet|
     puppet.manifests_path = "manifests"
     puppet.manifest_file  = "ubuntu-12.04.pp"
+    puppet.options = "--verbose"
   end
 
   # Enable provisioning with chef solo, specifying a cookbooks path, roles
