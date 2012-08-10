@@ -64,6 +64,7 @@ class goldberg {
   rvm_system_ruby {
     'ruby-1.9.3-p194':
        ensure => 'present',
-       default_use => true;
+       default_use => false;
   }                      
+
 }
