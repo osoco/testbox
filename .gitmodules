@@ -1,6 +1,0 @@
-[submodule "modules/rvm"]
-	path = modules/rvm
-	url = git://github.com/blt04/puppet-rvm.git
-[submodule "modules/wget"]
-	path = modules/wget
-	url = git://github.com/osoco/puppet-wget.git
