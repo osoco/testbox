@@ -6,9 +6,9 @@ stage {
 
 class {
   'init': stage => 'init';
+  'git_core': stage => 'main';
   'jdk': stage => 'main';
   'grails': stage => 'main';
-  'git_core': stage => 'main';
   'tomcat': stage => 'main';
   'jenkins': stage => 'main';
 }  
@@ -27,9 +27,9 @@ class init {
 }
 
 class git_core { 
-	package { 'git':
-        ensure => present,
-    }
+  package { 'git':
+    ensure => present,
+  }
 }
 
 class jdk {
@@ -85,6 +85,7 @@ class jenkins {
     group   => tomcat6,
     ensure  => directory,
     recurse => true,
+    require => Package['tomcat6'],
   } 
   
   exec { 'set-jenkins-home-tomcat':
