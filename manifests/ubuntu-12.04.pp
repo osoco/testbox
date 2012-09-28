@@ -71,13 +71,6 @@ class tomcat {
     ensure => running,
     require => Package['tomcat6'],
   }
-
-  exec { 'non-conflicting-tomcat-port':
-    command => "sed -i -e 's/8080/8888/g' /etc/tomcat6/server.xml",
-    notify => Service['tomcat6'],
-    require => [Package['sed'], Package['tomcat6']],
-    unless => 'grep 8888 /etc/tomcat6/server.xml',
-  }
 }
 
 class jenkins {
@@ -85,10 +78,25 @@ class jenkins {
     ensure => present,
   }
 
-  exec { 'jenkins-latest-war':
+  file { "mkdir-jenkins-home":
+    path    => "/var/opt/jenkins",
+    mode    => 0755,
+    owner   => tomcat6,
+    group   => tomcat6,
+    ensure  => directory,
+    recurse => true,
+  } 
+  
+  exec { 'set-jenkins-home-tomcat':
+    command => '/bin/echo "JENKINS_HOME=/var/opt/jenkins" >> /etc/default/tomcat6',
+    unless => 'grep JENKINS_HOME /etc/default/tomcat6',
+  }
+
+  exec { 'jenkins-latest-war':    
     command => '/usr/bin/wget --output-document=/var/lib/tomcat6/webapps/jenkins.war http://mirrors.jenkins-ci.org/war/latest/jenkins.war',
-    require => [Package['tomcat6'], Package['wget']],
+    require => [Package['tomcat6'], Package['wget'], File['mkdir-jenkins-home'], Exec['set-jenkins-home-tomcat']],
     creates => '/var/lib/tomcat6/webapps/jenkins.war',
+    notify => Service['tomcat6'],
     timeout => 600,
   }
 }
