@@ -58,13 +58,15 @@ class grails {
 }
 
 class tomcat {
-  package { 'sed': 
-    ensure => present,
-  }
-
   package { 'tomcat6':
     ensure => present,
     require => Package['openjdk-6-jdk'],
+  }
+
+  exec { "tomcat-home-permissions":
+    command => 'chown -R tomcat6:tomcat6 /usr/share/tomcat6',  
+    subscribe => Package['tomcat6'],
+    refreshonly => true,
   }
 
   service { 'tomcat6':
@@ -78,24 +80,9 @@ class jenkins {
     ensure => present,
   }
 
-  file { "mkdir-jenkins-home":
-    path    => "/var/opt/jenkins",
-    mode    => 0755,
-    owner   => tomcat6,
-    group   => tomcat6,
-    ensure  => directory,
-    recurse => true,
-    require => Package['tomcat6'],
-  } 
-  
-  exec { 'set-jenkins-home-tomcat':
-    command => '/bin/echo "JENKINS_HOME=/var/opt/jenkins" >> /etc/default/tomcat6',
-    unless => 'grep JENKINS_HOME /etc/default/tomcat6',
-  }
-
-  exec { 'jenkins-latest-war':    
+  exec { 'jenkins-latest-war': 
     command => '/usr/bin/wget --output-document=/var/lib/tomcat6/webapps/jenkins.war http://mirrors.jenkins-ci.org/war/latest/jenkins.war',
-    require => [Package['tomcat6'], Package['wget'], File['mkdir-jenkins-home'], Exec['set-jenkins-home-tomcat']],
+    require => [Package['tomcat6'], Exec['tomcat-home-permissions'], Package['wget']],
     creates => '/var/lib/tomcat6/webapps/jenkins.war',
     notify => Service['tomcat6'],
     timeout => 600,
