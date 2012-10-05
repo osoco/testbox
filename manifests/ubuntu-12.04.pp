@@ -1,3 +1,5 @@
+import 'params.pp'
+
 Exec { path => ['/usr/local/sbin', '/usr/local/bin', '/usr/sbin', '/usr/bin', '/sbin', '/bin'] }
 
 stage { 
@@ -6,6 +8,7 @@ stage {
 
 class {
   'init': stage => 'init';
+  'testbox::params': stage => 'init';
   'git_core': stage => 'main';
   'jdk': stage => 'main';
   'grails': stage => 'main';
@@ -34,7 +37,8 @@ class git_core {
 }
 
 class jdk {
-  package { "openjdk-6-jdk":
+  package { 'java':
+    name => $testbox::params::java_package,
     ensure => present,
   }
 }
@@ -51,17 +55,18 @@ class grails {
     refreshonly => true,
   }
 
-  package { 'grails-1.3.7':
+  package { 'grails':
+    name => "grails-$testbox::params::grails_version",
     ensure => present,
   }
 
-  Exec['grails-apt-get-update'] -> Package['grails-1.3.7']
+  Exec['grails-apt-get-update'] -> Package['grails']
 }
 
 class tomcat {
   package { 'tomcat6':
     ensure => present,
-    require => Package['openjdk-6-jdk'],
+    require => Package['java'],
   }
 
   exec { "tomcat-home-permissions":
