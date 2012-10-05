@@ -128,18 +128,21 @@ class jenkins-plugins {
 }
 
 class jenkins-job {
-  file { "/tmp/config.xml":
-    mode => "0644",
+  $project_repository_url = $testbox::params::project_repository_url
+  $job_name = $testbox::params::job_name
+
+  file { '/tmp/config.xml':
+    mode => '0644',
     owner => 'tomcat6',
     group => 'tomcat6',
-    source => "puppet:///modules/config/config.xml",
+    content => template('config/config.erb'),
     ensure => present,
   }
 
   exec { 'create-job':
     require => [File['/tmp/config.xml'], Package['jenkins-cli']],
-    command => 'jenkins-cli -s http://localhost:8080/jenkins/ create-job bms < /tmp/config.xml',
-    unless => 'ls /usr/share/tomcat6/.jenkins/jobs/bms',
+    command => "jenkins-cli -s http://localhost:8080/jenkins/ create-job $job_name < /tmp/config.xml",
+    unless => "ls /usr/share/tomcat6/.jenkins/jobs/$job_name",
   }
 }
 
