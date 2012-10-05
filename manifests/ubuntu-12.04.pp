@@ -101,20 +101,6 @@ class jenkins {
   }
 }
 
-class jenkins-job {
-  file { "/tmp/config.xml":
-    mode => "0644",
-    owner => 'tomcat6',
-    group => 'tomcat6',
-    source => "puppet:///modules/config/config.xml"
-  }
-
-  exec { 'create-job':
-   require => [File['/tmp/config.xml'], Package['jenkins-cli']],
-   command => 'jenkins-cli -s http://localhost:8080/jenkins/ create-job bms < /tmp/config.xml'
-  }
-}
-
 class jenkins-plugins {
   #exec { 'jenkins-up':
     #require => Exec['jenkins-latest-war'],
@@ -124,20 +110,36 @@ class jenkins-plugins {
   exec { 'jenkins-git-plugin':    
     command => 'jenkins-cli -s http://localhost:8080/jenkins install-plugin http://updates.jenkins-ci.org/download/plugins/git/1.1.24/git.hpi',
     require => Package['jenkins-cli'],
-    unless => 'ls /usr/share/tomcat6/.jenkins/plugins/git'
+    unless => 'ls /usr/share/tomcat6/.jenkins/plugins/git',
   }
 
   exec { 'jenkins-grails-plugin':
     command => 'jenkins-cli -s http://localhost:8080/jenkins install-plugin http://mirrors.jenkins-ci.org/plugins/grails/1.6.3/grails.hpi',
     require => Package['jenkins-cli'],
-    unless => 'ls /usr/share/tomcat6/.jenkins/plugins/grails'
+    unless => 'ls /usr/share/tomcat6/.jenkins/plugins/grails',
   }
 
   exec { 'jenkins-restart':    
     command => 'jenkins-cli -s http://localhost:8080/jenkins restart',
-    unless => 'ls /usr/share/tomcat6/.jenkins/plugins/git && ls /usr/share/tomcat6/.jenkins/plugins/grails'
+    unless => 'ls /usr/share/tomcat6/.jenkins/plugins/git && ls /usr/share/tomcat6/.jenkins/plugins/grails',
   }
   
   Exec['jenkins-git-plugin'] -> Exec['jenkins-grails-plugin'] -> Exec['jenkins-restart']
+}
+
+class jenkins-job {
+  file { "/tmp/config.xml":
+    mode => "0644",
+    owner => 'tomcat6',
+    group => 'tomcat6',
+    source => "puppet:///modules/config/config.xml",
+    ensure => present,
+  }
+
+  exec { 'create-job':
+    require => [File['/tmp/config.xml'], Package['jenkins-cli']],
+    command => 'jenkins-cli -s http://localhost:8080/jenkins/ create-job bms < /tmp/config.xml',
+    unless => 'ls /usr/share/tomcat6/.jenkins/jobs/bms',
+  }
 }
 
