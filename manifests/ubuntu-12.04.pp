@@ -14,8 +14,8 @@ class {
   'grails': stage => 'main';
   'tomcat': stage => 'main';
   'jenkins': stage => 'main';
-  'jenkins-job': stage => 'main';
   'jenkins-plugins': stage => 'main';
+  'jenkins-job': stage => 'main';
 }  
 
 class init {
@@ -65,13 +65,16 @@ class grails {
 }
 
 class tomcat {
+  $tomcat_home = '/usr/share/tomcat6'
+  $tomcat_webapps = '/var/lib/tomcat6/webapps'
+
   package { 'tomcat6':
     ensure => present,
     require => Package['java'],
   }
 
-  exec { "tomcat-home-permissions":
-    command => 'chown -R tomcat6:tomcat6 /usr/share/tomcat6',  
+  exec { 'tomcat-home-permissions':
+    command => "chown -R tomcat6:tomcat6 $tomcat_home",  
     subscribe => Package['tomcat6'],
     refreshonly => true,
   }
@@ -83,14 +86,17 @@ class tomcat {
 }
 
 class jenkins {
+  $jenkins_home = '/usr/share/tomcat6/.jenkins'
+  $jenkins_url = 'http://localhost:8080/jenkins/'
+
   package { 'wget': 
     ensure => present,
   }
 
   exec { 'jenkins-latest-war': 
-    command => '/usr/bin/wget --output-document=/var/lib/tomcat6/webapps/jenkins.war http://mirrors.jenkins-ci.org/war/latest/jenkins.war',
+    command => "/usr/bin/wget --output-document=$tomcat::tomcat_webapps/jenkins.war http://mirrors.jenkins-ci.org/war/latest/jenkins.war",
     require => [Package['tomcat6'], Exec['tomcat-home-permissions'], Package['wget']],
-    creates => '/var/lib/tomcat6/webapps/jenkins.war',
+    creates => "$tomcat::tomcat_webapps/jenkins.war",
     notify => Service['tomcat6'],
     timeout => 600,
   }
@@ -104,24 +110,24 @@ class jenkins {
 class jenkins-plugins {
   #exec { 'jenkins-up':
     #require => Exec['jenkins-latest-war'],
-    #command => 'wget --spider --tries 10 --retry-connrefused http://localhost:8080/jenkins/',
+    #command => 'wget --spider --tries 10 --retry-connrefused $jenkins::jenkins_home',
   #}
 
   exec { 'jenkins-git-plugin':    
-    command => 'jenkins-cli -s http://localhost:8080/jenkins install-plugin http://updates.jenkins-ci.org/download/plugins/git/1.1.24/git.hpi',
+    command => "jenkins-cli -s $jenkins::jenkins_url install-plugin http://updates.jenkins-ci.org/download/plugins/git/1.1.24/git.hpi",
     require => Package['jenkins-cli'],
-    unless => 'ls /usr/share/tomcat6/.jenkins/plugins/git',
+    unless => "ls $jenkins::jenkins_home/plugins/git",
   }
 
   exec { 'jenkins-grails-plugin':
-    command => 'jenkins-cli -s http://localhost:8080/jenkins install-plugin http://mirrors.jenkins-ci.org/plugins/grails/1.6.3/grails.hpi',
+    command => "jenkins-cli -s $jenkins::jenkins_url install-plugin http://mirrors.jenkins-ci.org/plugins/grails/1.6.3/grails.hpi",
     require => Package['jenkins-cli'],
-    unless => 'ls /usr/share/tomcat6/.jenkins/plugins/grails',
+    unless => "ls $jenkins::jenkins_home/plugins/grails",
   }
 
   exec { 'jenkins-restart':    
-    command => 'jenkins-cli -s http://localhost:8080/jenkins restart',
-    unless => 'ls /usr/share/tomcat6/.jenkins/plugins/git && ls /usr/share/tomcat6/.jenkins/plugins/grails',
+    command => "jenkins-cli -s $jenkins::jenkins_url restart",
+    unless => "ls $jenkins::jenkins_home/plugins/git && ls $jenkins::jenkins_home/plugins/grails",
   }
   
   Exec['jenkins-git-plugin'] -> Exec['jenkins-grails-plugin'] -> Exec['jenkins-restart']
@@ -137,12 +143,13 @@ class jenkins-job {
     group => 'tomcat6',
     content => template('config/config.erb'),
     ensure => present,
+    require => Exec['jenkins-latest-war'],
   }
 
-  exec { 'create-job':
+  exec { 'jenkins-create-job':
     require => [File['/tmp/config.xml'], Package['jenkins-cli']],
-    command => "jenkins-cli -s http://localhost:8080/jenkins/ create-job $job_name < /tmp/config.xml",
-    unless => "ls /usr/share/tomcat6/.jenkins/jobs/$job_name",
+    command => "jenkins-cli -s $jenkins::jenkins_url create-job $job_name < /tmp/config.xml",
+    unless => "ls $jenkins::jenkins_home/jobs/$job_name",
   }
 }
 
