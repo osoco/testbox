@@ -14,6 +14,7 @@ class {
   'grails': stage => 'main';
   'tomcat': stage => 'main';
   'jenkins': stage => 'main';
+  'jenkins-job': stage => 'main';
   'jenkins-plugins': stage => 'main';
 }  
 
@@ -93,14 +94,28 @@ class jenkins {
     notify => Service['tomcat6'],
     timeout => 600,
   }
-}
 
-class jenkins-plugins {
   package { 'jenkins-cli': 
     ensure => present,
     require => Exec['jenkins-latest-war'],
   }
-  
+}
+
+class jenkins-job {
+  file { "/tmp/config.xml":
+    mode => "0644",
+    owner => 'tomcat6',
+    group => 'tomcat6',
+    source => "puppet:///modules/config/config.xml"
+  }
+
+  exec { 'create-job':
+   require => [File['/tmp/config.xml'], Package['jenkins-cli']],
+   command => 'jenkins-cli -s http://localhost:8080/jenkins/ create-job bms < /tmp/config.xml'
+  }
+}
+
+class jenkins-plugins {
   #exec { 'jenkins-up':
     #require => Exec['jenkins-latest-war'],
     #command => 'wget --spider --tries 10 --retry-connrefused http://localhost:8080/jenkins/',
