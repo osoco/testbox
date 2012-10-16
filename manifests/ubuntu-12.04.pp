@@ -93,35 +93,41 @@ class jenkins {
     ensure => present,
   }
 
-  exec { 'jenkins-latest-war': 
-    command => "/usr/bin/wget --output-document=$tomcat::tomcat_webapps/jenkins.war http://mirrors.jenkins-ci.org/war/latest/jenkins.war",
-    require => [Package['tomcat6'], Exec['tomcat-home-permissions'], Package['wget']],
+  exec { 'jenkins-download': 
+    command => 'wget --output-document=/tmp/jenkins.war http://mirrors.jenkins-ci.org/war/latest/jenkins.war',
+    require => Package['wget'],
     creates => "$tomcat::tomcat_webapps/jenkins.war",
-    notify => Service['tomcat6'],
     timeout => 600,
+  }
+
+  exec { 'jenkins-deploy': 
+    command => "mv /tmp/jenkins.war $tomcat::tomcat_webapps/jenkins.war",
+    creates => "$tomcat::tomcat_webapps/jenkins.war",
+    require => [Package['tomcat6'], Exec['tomcat-home-permissions'], Exec['jenkins-download']],
   }
 
   package { 'jenkins-cli': 
     ensure => present,
-    require => Exec['jenkins-latest-war'],
+    require => Exec['jenkins-deploy'],
+  }
+
+  exec { 'jenkins-up':
+    command => "bash -c 'max=30; while ! wget --spider $jenkins_url > /dev/null 2>&1; do max=\$((max - 1)); [ \$max -lt 0 ] && break; sleep 1; done; [ \$max -gt 0 ]'",
+    require => Exec['jenkins-deploy'],
+    unless => "wget --spider --tries=1 $jenkins_url",
   }
 }
 
 class jenkins-plugins {
-  #exec { 'jenkins-up':
-    #require => Exec['jenkins-latest-war'],
-    #command => 'wget --spider --tries 10 --retry-connrefused $jenkins::jenkins_home',
-  #}
-
   exec { 'jenkins-git-plugin':    
     command => "jenkins-cli -s $jenkins::jenkins_url install-plugin http://updates.jenkins-ci.org/download/plugins/git/1.1.24/git.hpi",
-    require => Package['jenkins-cli'],
+    require => [Package['jenkins-cli'], Exec['jenkins-up']],
     unless => "ls $jenkins::jenkins_home/plugins/git",
   }
 
   exec { 'jenkins-grails-plugin':
     command => "jenkins-cli -s $jenkins::jenkins_url install-plugin http://mirrors.jenkins-ci.org/plugins/grails/1.6.3/grails.hpi",
-    require => Package['jenkins-cli'],
+    require => [Package['jenkins-cli'], Exec['jenkins-up']],
     unless => "ls $jenkins::jenkins_home/plugins/grails",
   }
 
@@ -135,20 +141,22 @@ class jenkins-plugins {
 
 class jenkins-job {
   $project_repository_url = $testbox::params::project_repository_url
+  $job_config = '/home/vagrant/job-config.xml'
   $job_name = $testbox::params::job_name
 
-  file { '/tmp/config.xml':
+  file { 'job-config.xml':
+    path => $job_config,
     mode => '0644',
-    owner => 'tomcat6',
-    group => 'tomcat6',
+    owner => 'vagrant',
+    group => 'vagrant',
     content => template('config/config.erb'),
     ensure => present,
-    require => Exec['jenkins-latest-war'],
+    require => Exec['jenkins-deploy'],
   }
 
   exec { 'jenkins-create-job':
-    require => [File['/tmp/config.xml'], Package['jenkins-cli']],
-    command => "jenkins-cli -s $jenkins::jenkins_url create-job $job_name < /tmp/config.xml",
+    command => "jenkins-cli -s $jenkins::jenkins_url create-job $job_name < $job_config",
+    require => [File['job-config.xml'], Package['jenkins-cli'], Exec['jenkins-restart']],
     unless => "ls $jenkins::jenkins_home/jobs/$job_name",
   }
 }
