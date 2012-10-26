@@ -111,15 +111,3 @@ Check your project directory permissions. The project and Git directory on the h
 # Compatibility
 Testbox was tested on MacOSX 10.7 and 10.8. It should work on any Linux distribution where Vagrant is supported.
 
-# Known issues
-Job is not created during the first provisioning. You get the error:
-
-```
-/Stage[main]/Jenkins-job/Exec[jenkins-create-job]/returns: change from notrun to 0 failed: jenkins-cli -s http://localhost:8080/jenkins/ create-job testbox < /home/vagrant/job-config.xml returned 1 instead of one of [0]
-```
-
-As a workaround, rerun the provisioning by executing:
-
-```
-vagrant reload
-```
