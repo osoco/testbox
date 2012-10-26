@@ -16,6 +16,7 @@ class {
   'jenkins': stage => 'main';
   'jenkins-plugins': stage => 'main';
   'jenkins-job': stage => 'main';
+  'firefox-headless': stage => 'main';
 }  
 
 class init {
@@ -131,12 +132,18 @@ class jenkins-plugins {
     unless => "ls $jenkins::jenkins_home/plugins/grails",
   }
 
+  exec { 'jenkins-xvfb-plugin':
+    command => "jenkins-cli -s $jenkins::jenkins_url install-plugin http://mirrors.jenkins-ci.org/plugins/xvfb/1.0.4/xvfb.hpi",
+    require => [Package['jenkins-cli'], Exec['jenkins-up']],
+    unless => "ls $jenkins::jenkins_home/plugins/xvfb",
+  }
+
   exec { 'jenkins-restart':    
     command => "jenkins-cli -s $jenkins::jenkins_url restart",
-    unless => "ls $jenkins::jenkins_home/plugins/git && ls $jenkins::jenkins_home/plugins/grails",
+    unless => "ls $jenkins::jenkins_home/plugins/git && ls $jenkins::jenkins_home/plugins/grails && ls $jenkins::jenkins_home/plugins/xvfb",
   }
   
-  Exec['jenkins-git-plugin'] -> Exec['jenkins-grails-plugin'] -> Exec['jenkins-restart']
+  Exec['jenkins-git-plugin'] -> Exec['jenkins-grails-plugin'] -> Exec['jenkins-xvfb-plugin'] -> Exec['jenkins-restart']
 }
 
 class jenkins-job {
@@ -158,6 +165,28 @@ class jenkins-job {
     command => "jenkins-cli -s $jenkins::jenkins_url create-job $job_name < $job_config",
     require => [File['job-config.xml'], Package['jenkins-cli'], Exec['jenkins-restart']],
     unless => "ls $jenkins::jenkins_home/jobs/$job_name",
+  }
+}
+
+class firefox-headless {
+  package { 'firefox': 
+    ensure => present,
+  }
+
+  package { 'xvfb': 
+    ensure => present,
+  }
+
+  package { 'xfonts-base': 
+    ensure => present,
+  }
+
+  package { 'xfonts-75dpi': 
+    ensure => present,
+  }
+
+  package { 'xfonts-100dpi': 
+    ensure => present,
   }
 }
 
