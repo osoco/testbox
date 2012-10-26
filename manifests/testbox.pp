@@ -90,9 +90,10 @@ class tomcat {
     unless => 'grep 8888 /etc/tomcat6/server.xml',
   }
 
-  service { 'tomcat6':
-   ensure => running,
-   require => Exec['non-conflicting-tomcat-port'],
+  exec { 'tomcat6':
+    command => '/etc/init.d/tomcat6 restart',
+    subscribe => Exec['non-conflicting-tomcat-port'],
+    refreshonly => true,
   }
 }
 
@@ -114,7 +115,7 @@ class jenkins {
   exec { 'jenkins-deploy': 
     command => "mv /tmp/jenkins.war $tomcat::tomcat_webapps/jenkins.war",
     creates => "$tomcat::tomcat_webapps/jenkins.war",
-    require => [Package['tomcat6'], Exec['tomcat-home-permissions'], Exec['jenkins-download']],
+    require => [Exec['tomcat6'], Exec['tomcat-home-permissions'], Exec['jenkins-download']],
   }
 
   package { 'jenkins-cli': 
