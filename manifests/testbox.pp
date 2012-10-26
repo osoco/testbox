@@ -69,6 +69,10 @@ class tomcat {
   $tomcat_home = '/usr/share/tomcat6'
   $tomcat_webapps = '/var/lib/tomcat6/webapps'
 
+  package { 'sed': 
+    ensure => present,
+  }
+
   package { 'tomcat6':
     ensure => present,
     require => Package['java'],
@@ -80,15 +84,21 @@ class tomcat {
     refreshonly => true,
   }
 
+  exec { 'non-conflicting-tomcat-port':
+    command => "sed -i -e 's/8080/8888/g' /etc/tomcat6/server.xml",
+    require => [Package['sed'], Package['tomcat6']],
+    unless => 'grep 8888 /etc/tomcat6/server.xml',
+  }
+
   service { 'tomcat6':
-    ensure => running,
-    require => Package['tomcat6'],
+   ensure => running,
+   require => Exec['non-conflicting-tomcat-port'],
   }
 }
 
 class jenkins {
   $jenkins_home = '/usr/share/tomcat6/.jenkins'
-  $jenkins_url = 'http://localhost:8080/jenkins/'
+  $jenkins_url = 'http://localhost:8888/jenkins/'
 
   package { 'wget': 
     ensure => present,
