@@ -124,7 +124,9 @@ class jenkins {
   }
 
   exec { 'jenkins-up':
-    command => "bash -c 'max=30; while ! wget --spider $jenkins_url > /dev/null 2>&1; do max=\$((max - 1)); [ \$max -lt 0 ] && break; sleep 1; done; [ \$max -gt 0 ]'",
+    command => "wget --spider $jenkins_url",
+    tries => 30,
+    try_sleep => 1,
     require => Exec['jenkins-deploy'],
     unless => "wget --spider --tries=1 $jenkins_url",
   }
@@ -156,9 +158,11 @@ class jenkins-plugins {
   }
   
   exec { 'jenkins-restarted':    
-    command => "bash -c 'max=30; while ! jenkins-cli -s $jenkins::jenkins_url version > /dev/null 2>&1; do max=\$((max - 1)); [ \$max -lt 0 ] && break; sleep 1; done; [ \$max -gt 0 ]'",
-    unless => "jenkins-cli -s $jenkins::jenkins_url version",
+    command => "jenkins-cli -s $jenkins::jenkins_url version",
+    tries => 30,
+    try_sleep => 1,
     require => Exec['jenkins-restart'],
+    unless => "jenkins-cli -s $jenkins::jenkins_url version",
   }
 }
 
