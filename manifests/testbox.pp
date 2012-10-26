@@ -152,9 +152,14 @@ class jenkins-plugins {
   exec { 'jenkins-restart':    
     command => "jenkins-cli -s $jenkins::jenkins_url restart",
     unless => "ls $jenkins::jenkins_home/plugins/git && ls $jenkins::jenkins_home/plugins/grails && ls $jenkins::jenkins_home/plugins/xvfb",
+    require => [Exec['jenkins-git-plugin'], Exec['jenkins-grails-plugin'], Exec['jenkins-xvfb-plugin']]
   }
   
-  Exec['jenkins-git-plugin'] -> Exec['jenkins-grails-plugin'] -> Exec['jenkins-xvfb-plugin'] -> Exec['jenkins-restart']
+  exec { 'jenkins-restarted':    
+    command => "bash -c 'max=30; while ! jenkins-cli -s $jenkins::jenkins_url version > /dev/null 2>&1; do max=\$((max - 1)); [ \$max -lt 0 ] && break; sleep 1; done; [ \$max -gt 0 ]'",
+    unless => "jenkins-cli -s $jenkins::jenkins_url version",
+    require => Exec['jenkins-restart'],
+  }
 }
 
 class jenkins-job {
@@ -174,7 +179,7 @@ class jenkins-job {
 
   exec { 'jenkins-create-job':
     command => "jenkins-cli -s $jenkins::jenkins_url create-job $job_name < $job_config",
-    require => [File['job-config.xml'], Package['jenkins-cli'], Exec['jenkins-restart']],
+    require => [File['job-config.xml'], Exec['jenkins-restarted']],
     unless => "ls $jenkins::jenkins_home/jobs/$job_name",
   }
 }
