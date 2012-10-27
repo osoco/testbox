@@ -34,9 +34,7 @@ vagrant up
 ```
 Watch the progress and be patient, it takes some time to finish.
 
-* Configure Jenkins. Go to _Jenkins/Manage Jenkins/Configure system_ and then:
-  * Xvfb installation - put e.g. Default as name and ``/usr/bin`` as directory in which to find Xvfb executable
-  * set the ``JAVA_OPTS`` environment variable if you get an error described in the [Troubleshooting](#heap_size_error) section
+* If you get an error described in the [Troubleshooting](#heap_size_error) section, set the ``JAVA_OPTS`` environment variable in Jenkins global configuration (Go to _Jenkins/Manage Jenkins/Configure system_) 
 * If your application is memory consuming, increase the virtual machine RAM and set the ```GRAILS_OPTS``` environment variable as described in the [memory-hungry applications](#memory_hungry_applications) section
 
 # Usage
@@ -62,7 +60,7 @@ On MacOSX host, the home directory ``/Users/mgryszko`` is shared as ``/home/mgry
 
 Host network is bridged to the virtual machine. This means you have full access to the network the host is connected to from the guest. More on this in the [VirtualBox manual](http://www.virtualbox.org/manual/ch06.html).
 ### host -> virtual machine
-Virtual machine port ``8888`` is mapped to ``8888`` local port).
+Virtual machine port ``8888`` is mapped to ``8888`` local port.
 
 ## Jenkins access
 Jenkins runs on ``8888`` port inside the virtual machine. As explained in the [network](#network) section, you can access Jenkins by opening this URL in your browser:
@@ -74,7 +72,7 @@ http://localhost:8888
 ## [memory-hungry applications](id:memory_hungry_applications)
 * Increase virtual machine RAM. Stop the testbox. Open VirtualBox application. In VM settings increase the available RAM size going to the _System_ tab.
 * Set ``GRAILS_OPTS`` environment variable in _Jenkins/Manage Jenkins/Configure system_, e.g. to ``-Xms512M -Xmx1024M -XX:PermSize=256M -XX:MaxPermSize=256M``
-* Allocate more memory to the virtual machine than to JVM!
+* Allocate more memory to the virtual machine (via VirtualBox configuration) than to JVM!
 
 ## testbox startup/shutdown
 Startup:

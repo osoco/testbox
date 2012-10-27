@@ -14,7 +14,9 @@ class {
   'grails': stage => 'main';
   'tomcat': stage => 'main';
   'jenkins': stage => 'main';
+  'jenkins-config': stage => 'main';
   'jenkins-plugins': stage => 'main';
+  'jenkins-plugins-config': stage => 'main';
   'jenkins-job': stage => 'main';
   'firefox-headless': stage => 'main';
 }  
@@ -132,6 +134,17 @@ class jenkins {
   }
 }
 
+class jenkins-config {
+  file { "$jenkins::jenkins_home/config.xml":
+    mode => '0644',
+    owner => 'vagrant',
+    group => 'vagrant',
+    source => "puppet:///modules/config/config.xml",
+    ensure => present,
+    require => Exec['jenkins-up'],
+  }  
+}
+
 class jenkins-plugins {
   exec { 'jenkins-git-plugin':    
     command => "jenkins-cli -s $jenkins::jenkins_url install-plugin http://updates.jenkins-ci.org/download/plugins/git/1.1.24/git.hpi",
@@ -166,6 +179,17 @@ class jenkins-plugins {
   }
 }
 
+class jenkins-plugins-config {
+  file { "$jenkins::jenkins_home/org.jenkinsci.plugins.xvfb.XvfbBuildWrapper.xml":
+    mode => '0644',
+    owner => 'vagrant',
+    group => 'vagrant',
+    source => "puppet:///modules/config/org.jenkinsci.plugins.xvfb.XvfbBuildWrapper.xml",
+    ensure => present,
+    require => Exec['jenkins-xvfb-plugin'],
+  }
+}
+
 class jenkins-job {
   $project_repository_url = $testbox::params::project_repository_url
   $job_config = '/home/vagrant/job-config.xml'
@@ -185,6 +209,11 @@ class jenkins-job {
     command => "jenkins-cli -s $jenkins::jenkins_url create-job $job_name < $job_config",
     require => [File['job-config.xml'], Exec['jenkins-restarted']],
     unless => "ls $jenkins::jenkins_home/jobs/$job_name",
+  }
+
+  exec { 'jenkins-start-job':
+    command => "jenkins-cli -s $jenkins::jenkins_url build $job_name",
+    require => Exec['jenkins-create-job'],
   }
 }
 
