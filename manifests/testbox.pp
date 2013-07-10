@@ -11,7 +11,7 @@ class {
   'testbox::params': stage => 'init';
   'git_core': stage => 'main';
   'jdk': stage => 'main';
-  'grails': stage => 'main';
+  'grails-class': stage => 'main';
   'tomcat': stage => 'main';
   'jenkins': stage => 'main';
   'jenkins-config': stage => 'main';
@@ -47,24 +47,11 @@ class jdk {
   }
 }
 
-class grails {
-  exec { 'ppa:groovy-dev/grails':
-    command => 'add-apt-repository ppa:groovy-dev/grails',
-    unless => 'ls /etc/apt/sources.list.d/groovy-dev-grails-*',
+class grails-class {
+  grails { "grails-$testbox::params::grails_version":
+    version => "$testbox::params::grails_version", 
+    destination => "/usr/share/grails"
   }
-
-  exec { 'grails-apt-get-update':
-    command => 'apt-get update',
-    subscribe => Exec['ppa:groovy-dev/grails'],
-    refreshonly => true,
-  }
-
-  package { 'grails':
-    name => "grails-$testbox::params::grails_version",
-    ensure => present,
-  }
-
-  Exec['grails-apt-get-update'] -> Package['grails']
 }
 
 class tomcat {
@@ -102,10 +89,6 @@ class tomcat {
 class jenkins {
   $jenkins_home = '/usr/share/tomcat6/.jenkins'
   $jenkins_url = 'http://localhost:8888/jenkins/'
-
-  package { 'wget': 
-    ensure => present,
-  }
 
   exec { 'jenkins-download': 
     command => 'wget --output-document=/tmp/jenkins.war http://mirrors.jenkins-ci.org/war/latest/jenkins.war',
