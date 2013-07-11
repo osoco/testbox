@@ -4,9 +4,3 @@
 [submodule "modules/wget"]
 	path = modules/wget
 	url = https://github.com/osoco/puppet-wget.git
-[submodule "modules/tomcat"]
-	path = modules/tomcat
-	url = https://github.com/osoco/puppet-tomcat.git
-[submodule "modules/jenkins"]
-	path = modules/jenkins
-	url = https://github.com/osoco/puppet-jenkins.git
