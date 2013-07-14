@@ -118,11 +118,22 @@ class jenkins {
 }
 
 class jenkins-config {
+  $grails_version = $testbox::params::grails_version
+  
   file { "$jenkins::jenkins_home/config.xml":
     mode => '0644',
     owner => 'vagrant',
     group => 'vagrant',
     source => "puppet:///modules/config/config.xml",
+    ensure => present,
+    require => Exec['jenkins-up'],
+  }  
+  
+  file { "$jenkins::jenkins_home/com.g2one.hudson.grails.GrailsInstallation.xml":
+    mode => '0644',
+    owner => 'vagrant',
+    group => 'vagrant',
+    content => template('config/com.g2one.hudson.grails.GrailsInstallation.erb'),
     ensure => present,
     require => Exec['jenkins-up'],
   }  
@@ -177,6 +188,7 @@ class jenkins-job {
   $project_repository_url = $testbox::params::project_repository_url
   $job_config = '/home/vagrant/job-config.xml'
   $job_name = $testbox::params::job_name
+  $grails_version = $testbox::params::grails_version
 
   file { 'job-config.xml':
     path => $job_config,
