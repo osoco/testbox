@@ -1,0 +1,6 @@
+[submodule "modules/grails"]
+	path = modules/grails
+	url = https://github.com/osoco/puppet-grails.git
+[submodule "modules/wget"]
+	path = modules/wget
+	url = https://github.com/osoco/puppet-wget.git

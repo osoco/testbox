@@ -11,7 +11,7 @@ class {
   'testbox::params': stage => 'init';
   'git_core': stage => 'main';
   'jdk': stage => 'main';
-  'grails': stage => 'main';
+  'grails-class': stage => 'main';
   'tomcat': stage => 'main';
   'jenkins': stage => 'main';
   'jenkins-config': stage => 'main';
@@ -47,24 +47,11 @@ class jdk {
   }
 }
 
-class grails {
-  exec { 'ppa:groovy-dev/grails':
-    command => 'add-apt-repository ppa:groovy-dev/grails',
-    unless => 'ls /etc/apt/sources.list.d/groovy-dev-grails-*',
+class grails-class {
+  grails { "grails-$testbox::params::grails_version":
+    version => "$testbox::params::grails_version", 
+    destination => "/usr/share/grails"
   }
-
-  exec { 'grails-apt-get-update':
-    command => 'apt-get update',
-    subscribe => Exec['ppa:groovy-dev/grails'],
-    refreshonly => true,
-  }
-
-  package { 'grails':
-    name => "grails-$testbox::params::grails_version",
-    ensure => present,
-  }
-
-  Exec['grails-apt-get-update'] -> Package['grails']
 }
 
 class tomcat {
@@ -103,10 +90,6 @@ class jenkins {
   $jenkins_home = '/usr/share/tomcat6/.jenkins'
   $jenkins_url = 'http://localhost:8888/jenkins/'
 
-  package { 'wget': 
-    ensure => present,
-  }
-
   exec { 'jenkins-download': 
     command => 'wget --output-document=/tmp/jenkins.war http://mirrors.jenkins-ci.org/war/latest/jenkins.war',
     require => Package['wget'],
@@ -135,11 +118,22 @@ class jenkins {
 }
 
 class jenkins-config {
+  $grails_version = $testbox::params::grails_version
+  
   file { "$jenkins::jenkins_home/config.xml":
     mode => '0644',
     owner => 'vagrant',
     group => 'vagrant',
     source => "puppet:///modules/config/config.xml",
+    ensure => present,
+    require => Exec['jenkins-up'],
+  }  
+  
+  file { "$jenkins::jenkins_home/com.g2one.hudson.grails.GrailsInstallation.xml":
+    mode => '0644',
+    owner => 'vagrant',
+    group => 'vagrant',
+    content => template('config/com.g2one.hudson.grails.GrailsInstallation.erb'),
     ensure => present,
     require => Exec['jenkins-up'],
   }  
@@ -194,6 +188,7 @@ class jenkins-job {
   $project_repository_url = $testbox::params::project_repository_url
   $job_config = '/home/vagrant/job-config.xml'
   $job_name = $testbox::params::job_name
+  $grails_version = $testbox::params::grails_version
 
   file { 'job-config.xml':
     path => $job_config,
